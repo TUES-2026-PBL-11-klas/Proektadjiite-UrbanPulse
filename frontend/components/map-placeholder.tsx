@@ -26,6 +26,8 @@ interface MapPlaceholderProps {
   className?: string;
 }
 
+const SOFIA_FALLBACK_CENTER = { lat: 42.6977, lng: 23.3219 };
+
 // Status color mapping
 const statusColors: Record<string, { bg: string; text: string; glow: string }> =
   {
