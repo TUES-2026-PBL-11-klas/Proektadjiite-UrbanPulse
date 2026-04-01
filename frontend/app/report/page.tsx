@@ -380,7 +380,7 @@ export default function ReportPage() {
                   >
                     <X size={20} />
                   </button>
-                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 to-transparent">
+                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-linear-to-t from-black/70 to-transparent">
                     <p className="text-white text-sm font-medium truncate">
                       {formData.image?.name}
                     </p>

@@ -167,14 +167,14 @@ export function ReportListItem({ report, showActions, className }: ReportListIte
       
       <StatusBadge status={report.status} size="sm" />
       
-      <div className="flex items-center gap-1 text-sm text-muted-foreground min-w-[60px]">
+      <div className="flex items-center gap-1 text-sm text-muted-foreground min-w-15">
         <ThumbsUp size={14} />
         <span>{report.voteCount}</span>
       </div>
       
       <HeatScore score={report.heatScore} size="sm" showLabel={false} />
       
-      <span className="text-sm text-muted-foreground min-w-[90px] text-right">
+      <span className="text-sm text-muted-foreground min-w-22.5 text-right">
         {formatDate(report.createdAt)}
       </span>
       
