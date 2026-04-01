@@ -1,6 +1,6 @@
 import express from 'express';
 import authRoutes from './auth.js';
-import reportRoutes from './reports.js';
+import reportRoutes from './reports/index.js';
 import adminRoutes from './admin.js';
 
 const router = express.Router();
