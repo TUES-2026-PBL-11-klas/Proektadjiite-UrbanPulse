@@ -1,6 +1,7 @@
 import express from 'express';
 import authRoutes from './auth.js';
 import reportRoutes from './reports.js';
+import adminRoutes from './admin.js';
 
 const router = express.Router();
 
@@ -10,5 +11,6 @@ router.get('/', (req, res) => {
 
 router.use('/auth', authRoutes);
 router.use('/reports', reportRoutes);
+router.use('/admin', adminRoutes);
 
 export default router;

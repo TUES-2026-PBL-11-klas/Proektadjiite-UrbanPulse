@@ -84,14 +84,14 @@ model Vote {
 model StatusHistory {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   report_id  String   @db.Uuid
-  changed_by String   @db.Uuid
+  changed_by String?  @db.Uuid
   old_status Status
   new_status Status
   comment    String?  @db.Text
   changed_at DateTime @default(now()) @db.Timestamptz
 
   report Report @relation(fields: [report_id], references: [id])
-  admin  User   @relation(fields: [changed_by], references: [id])
+  admin  User?  @relation(fields: [changed_by], references: [id])
 
   @@map("status_history")
 }

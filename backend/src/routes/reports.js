@@ -3,6 +3,7 @@ import { Category, Prisma, Status } from '@prisma/client';
 import prisma from '../db.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 import roleMiddleware from '../middleware/roleMiddleware.js';
+import { sendStatusChangeEmail } from '../utils/email.js';
 import {
   upload,
   getUploadedFileUrl,
@@ -516,8 +517,10 @@ router.patch(
         select: {
           id: true,
           user_id: true,
+          title: true,
           status: true,
           resolved_at: true,
+          user: { select: { email: true } },
         },
       });
 
@@ -566,6 +569,7 @@ router.patch(
       return {
         report: updatedReport,
         status_history: historyEntry,
+        _email: { to: report.user.email, title: report.title },
       };
     });
 
@@ -573,7 +577,16 @@ router.patch(
       return res.status(result.statusCode).json({ error: result.error });
     }
 
-    return res.json(result);
+    // Fire-and-forget — does not block the response
+    sendStatusChangeEmail(
+      result._email.to,
+      result._email.title,
+      newStatus,
+      comment?.trim() || null,
+    ).catch((err) => console.error('[email]', err.message));
+
+    const { _email: _, ...response } = result;
+    return res.json(response);
   }),
 );
 
