@@ -32,8 +32,8 @@ export function Navbar({ user = null, transparent = false, className }: NavbarPr
         className
       )}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+      <div className="w-full px-3 sm:px-4 lg:px-6 xl:px-8">
+        <div className="grid h-16 grid-cols-[auto_1fr_auto] items-center gap-3 lg:gap-6">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
             <div className="relative">
@@ -47,7 +47,7 @@ export function Navbar({ user = null, transparent = false, className }: NavbarPr
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center justify-self-center gap-8">
             <Link 
               href="/" 
               className="text-white/80 hover:text-lime transition-colors font-medium"
@@ -63,7 +63,7 @@ export function Navbar({ user = null, transparent = false, className }: NavbarPr
           </div>
 
           {/* Desktop Auth / User Menu */}
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden md:flex items-center justify-self-end gap-2">
             {user ? (
               <>
                 {user.role === 'admin' && (
