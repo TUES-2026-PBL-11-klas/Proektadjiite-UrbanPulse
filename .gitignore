@@ -1,5 +1,9 @@
 node_modules/
 .env
+.env.local
+dist
+uploads
+
 
 # Next.js build output
 .next/
@@ -7,3 +11,7 @@ frontend/.next/
 
 # Frontend dependencies
 frontend/node_modules/
+
+
+
+
