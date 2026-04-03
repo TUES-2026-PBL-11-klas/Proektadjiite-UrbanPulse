@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { ReportCard } from "@/components/report-card";
 import { apiGet } from "@/lib/api";
+import { usePlatformStats } from "@/lib/hooks/use-platform-stats";
 
 interface FilterState {
   categories: ReportCategory[];
@@ -82,6 +83,7 @@ function buildQuery(filters: FilterState): string {
 }
 
 export default function HomePage() {
+  const { stats: platformStats } = usePlatformStats();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"map" | "list">("map");
@@ -269,7 +271,11 @@ export default function HomePage() {
                     <TrendingUp size={14} className="text-lime" />
                     <span className="text-xs font-medium text-white/85">Тази седмица</span>
                   </div>
-                  <span className="text-xl font-bold text-lime">+12%</span>
+                  <span className="text-xl font-bold text-lime">
+                    {platformStats?.weekly_trend_pct !== null && platformStats?.weekly_trend_pct !== undefined
+                      ? `${platformStats.weekly_trend_pct > 0 ? '+' : ''}${platformStats.weekly_trend_pct}%`
+                      : '…'}
+                  </span>
                 </div>
               </div>
             </div>

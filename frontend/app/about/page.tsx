@@ -25,13 +25,7 @@ import {
   MessageSquareQuote,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-const stats = [
-  { value: '3,450+', label: 'Подадени сигнали', icon: MapPin },
-  { value: '1,200+', label: 'Активни граждани', icon: Users },
-  { value: '78%', label: 'Решени проблеми', icon: CheckCircle2 },
-  { value: '24', label: 'Района на София', icon: Globe },
-]
+import { usePlatformStats } from '@/lib/hooks/use-platform-stats'
 
 const values = [
   {
@@ -117,6 +111,30 @@ const team = [
 export default function AboutPage() {
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
+  const { stats: liveStats, isLoading: statsLoading } = usePlatformStats()
+
+  const platformStats = [
+    {
+      value: statsLoading ? '…' : `${(liveStats?.total_reports ?? 0).toLocaleString()}+`,
+      label: 'Подадени сигнали',
+      icon: MapPin,
+    },
+    {
+      value: statsLoading ? '…' : `${(liveStats?.total_users ?? 0).toLocaleString()}+`,
+      label: 'Активни граждани',
+      icon: Users,
+    },
+    {
+      value: statsLoading ? '…' : `${liveStats?.resolved_percentage ?? 0}%`,
+      label: 'Решени проблеми',
+      icon: CheckCircle2,
+    },
+    {
+      value: '24',
+      label: 'Района на София',
+      icon: Globe,
+    },
+  ]
 
   return (
     <div className="min-h-screen bg-surface">
@@ -192,7 +210,7 @@ export default function AboutPage() {
 
           {/* Stats row */}
           <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-4">
-            {stats.map((stat) => (
+            {platformStats.map((stat) => (
               <div
                 key={stat.label}
                 className="group relative bg-card rounded-2xl border border-border hover:border-forest/25 p-6 text-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
@@ -449,7 +467,7 @@ export default function AboutPage() {
             Готови ли сте да направите разлика?
           </h2>
           <p className="text-white/55 text-lg mb-12 max-w-xl mx-auto leading-relaxed">
-            Присъединете се към над 1,200 активни граждани, които вече променят
+            Присъединете се към над {statsLoading ? '…' : (liveStats?.total_users ?? 0).toLocaleString()} активни граждани, които вече променят
             София. Вашият глас може да бъде следващият, който ще бъде чут.
           </p>
 

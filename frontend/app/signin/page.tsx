@@ -8,9 +8,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/context/auth-context'
+import { usePlatformStats } from '@/lib/hooks/use-platform-stats'
 
 export default function SignInPage() {
   const { login } = useAuth()
+  const { stats, isLoading: statsLoading } = usePlatformStats()
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -195,15 +197,21 @@ export default function SignInPage() {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-8 mt-8">
             <div className="text-center">
-              <p className="font-heading text-3xl font-bold text-lime">1,200+</p>
+              <p className="font-heading text-3xl font-bold text-lime">
+                {statsLoading ? '…' : `${(stats?.total_users ?? 0).toLocaleString()}+`}
+              </p>
               <p className="text-white/60 text-sm mt-1">Активни граждани</p>
             </div>
             <div className="text-center">
-              <p className="font-heading text-3xl font-bold text-lime">3,450</p>
+              <p className="font-heading text-3xl font-bold text-lime">
+                {statsLoading ? '…' : (stats?.total_reports ?? 0).toLocaleString()}
+              </p>
               <p className="text-white/60 text-sm mt-1">Подадени сигнали</p>
             </div>
             <div className="text-center">
-              <p className="font-heading text-3xl font-bold text-lime">78%</p>
+              <p className="font-heading text-3xl font-bold text-lime">
+                {statsLoading ? '…' : `${stats?.resolved_percentage ?? 0}%`}
+              </p>
               <p className="text-white/60 text-sm mt-1">Решени проблеми</p>
             </div>
           </div>
