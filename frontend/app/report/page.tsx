@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Activity,
   ArrowLeft,
@@ -21,6 +22,8 @@ import { CategoryCard } from "@/components/category-icon";
 import { MapPlaceholder } from "@/components/map-placeholder";
 import { type ReportCategory, categoryLabels } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/auth-context";
+import { apiPostForm } from "@/lib/api";
 
 const steps = [
   { id: 1, title: "Категория", description: "Изберете тип проблем" },
@@ -38,9 +41,13 @@ const categories: ReportCategory[] = [
 ];
 
 export default function ReportPage() {
+  const { user, token, isLoading: authLoading, refreshPoints } = useAuth();
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [geoLocating, setGeoLocating] = useState(false);
   const reverseGeocodeRequestIdRef = useRef(0);
 
   const [formData, setFormData] = useState({
@@ -52,6 +59,12 @@ export default function ReportPage() {
     image: null as File | null,
     imagePreview: null as string | null,
   });
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/signin");
+    }
+  }, [authLoading, user, router]);
 
   const resolveAddressFromCoordinates = async (location: {
     lat: number;
@@ -137,6 +150,25 @@ export default function ReportPage() {
     setFormData((prev) => ({ ...prev, address: resolvedAddress }));
   };
 
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      handleLocationSelect({ lat: 42.6977, lng: 23.3219 });
+      return;
+    }
+    setGeoLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGeoLocating(false);
+        handleLocationSelect({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      },
+      () => {
+        setGeoLocating(false);
+        handleLocationSelect({ lat: 42.6977, lng: 23.3219 });
+      },
+      { timeout: 8000 }
+    );
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -186,23 +218,42 @@ export default function ReportPage() {
   };
 
   const handleSubmit = async () => {
+    if (!formData.category || !formData.location || !formData.image || !token) return;
+    setSubmitError(null);
     setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsSubmitting(false);
-    setIsSuccess(true);
+
+    const body = new FormData();
+    body.append("category", formData.category);
+    body.append("title", formData.title);
+    if (formData.description) body.append("description", formData.description);
+    body.append("latitude", String(formData.location.lat));
+    body.append("longitude", String(formData.location.lng));
+    body.append("image", formData.image);
+
+    try {
+      const res = await apiPostForm<{ report: unknown; user: { points: number; level: number } }>(
+        "/api/reports", body, token
+      );
+      if (res.user) refreshPoints(res.user.points, res.user.level);
+      setIsSuccess(true);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Грешка при изпращане");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (authLoading || !user) return null;
 
   // Success state
   if (isSuccess) {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center p-4">
         <div className="max-w-md w-full text-center">
-          {/* Confetti animation placeholder */}
           <div className="relative mb-8">
             <div className="w-24 h-24 rounded-full bg-lime/20 flex items-center justify-center mx-auto animate-bounce">
               <Sparkles size={48} className="text-lime" />
             </div>
-            {/* Confetti dots */}
             {[...Array(12)].map((_, i) => (
               <div
                 key={i}
@@ -228,7 +279,6 @@ export default function ReportPage() {
             при промяна на статуса.
           </p>
 
-          {/* Points earned */}
           <div className="bg-lime/10 border border-lime/30 rounded-xl p-6 mb-8">
             <p className="text-sm text-forest mb-2">Спечелихте</p>
             <p className="font-heading text-4xl font-bold text-forest">
@@ -271,7 +321,7 @@ export default function ReportPage() {
               UrbanPulse
             </span>
           </Link>
-          <div className="w-20" /> {/* Spacer for centering */}
+          <div className="w-20" />
         </div>
       </header>
 
@@ -335,7 +385,6 @@ export default function ReportPage() {
                 Изберете категория и опишете накратко проблема
               </p>
 
-              {/* Category grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">
                 {categories.map((category) => (
                   <CategoryCard
@@ -349,7 +398,6 @@ export default function ReportPage() {
                 ))}
               </div>
 
-              {/* Title */}
               <div className="space-y-2 mb-6">
                 <Label htmlFor="title">Заглавие на сигнала</Label>
                 <Input
@@ -370,7 +418,6 @@ export default function ReportPage() {
                 </p>
               </div>
 
-              {/* Description */}
               <div className="space-y-2">
                 <Label htmlFor="description">
                   Подробно описание (незадължително)
@@ -405,7 +452,6 @@ export default function ReportPage() {
                 Кликнете на картата, за да маркирате точната локация
               </p>
 
-              {/* Map */}
               <div className="rounded-xl overflow-hidden border mb-6">
                 <MapPlaceholder
                   interactive
@@ -416,21 +462,17 @@ export default function ReportPage() {
                 />
               </div>
 
-              {/* Use current location button */}
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => {
-                  // Simulate getting current location
-                  handleLocationSelect({ lat: 42.6977, lng: 23.3219 });
-                }}
+                onClick={handleUseCurrentLocation}
+                disabled={geoLocating}
                 className="w-full sm:w-auto mb-6"
               >
                 <Locate size={18} className="mr-2" />
-                Използвай текущата ми локация
+                {geoLocating ? "Определяне на локация..." : "Използвай текущата ми локация"}
               </Button>
 
-              {/* Selected address */}
               {formData.location && (
                 <div className="p-4 bg-muted rounded-xl">
                   <div className="flex items-start gap-3">
@@ -459,7 +501,6 @@ export default function ReportPage() {
                 сигнала
               </p>
 
-              {/* Upload area */}
               {!formData.imagePreview ? (
                 <label
                   onDrop={handleDrop}
@@ -506,12 +547,17 @@ export default function ReportPage() {
                 </div>
               )}
 
-              {/* Validation message */}
               {!formData.image && (
                 <p className="text-sm text-amber-600 mt-4 flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                   Снимката е задължителна за подаване на сигнала
                 </p>
+              )}
+
+              {submitError && (
+                <div className="mt-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive">
+                  {submitError}
+                </div>
               )}
             </div>
           )}

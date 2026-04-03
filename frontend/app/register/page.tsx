@@ -2,17 +2,24 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Activity, Mail, Lock, Eye, EyeOff, ArrowRight, User, Check, Award, TrendingUp, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/context/auth-context'
+import { usePlatformStats } from '@/lib/hooks/use-platform-stats'
 
 export default function RegisterPage() {
+  const { register } = useAuth()
+  const { stats, isLoading: statsLoading } = usePlatformStats()
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
@@ -40,9 +47,16 @@ export default function RegisterPage() {
     if (formData.password !== formData.confirmPassword) {
       return
     }
+    setError(null)
     setIsLoading(true)
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    setIsLoading(false)
+    try {
+      await register(formData.email, formData.password, formData.name)
+      router.push('/')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Грешка при регистрация')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -77,7 +91,7 @@ export default function RegisterPage() {
               Станете част от общността
             </h2>
             <p className="text-white/70 text-lg max-w-md">
-              Присъединете се към над 1,200 активни граждани, които правят София по-добро място за живеене.
+              Присъединете се към над {statsLoading ? '…' : (stats?.total_users ?? 0).toLocaleString()} активни граждани, които правят София по-добро място за живеене.
             </p>
           </div>
 
@@ -164,6 +178,11 @@ export default function RegisterPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive">
+                {error}
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="name">Пълно име</Label>
               <div className="relative">
@@ -315,7 +334,7 @@ export default function RegisterPage() {
           {/* Gamification teaser */}
           <div className="mt-6 p-4 bg-lime/10 border border-lime/30 rounded-xl">
             <p className="text-sm text-forest text-center">
-              <span className="font-semibold">Присъединете се към 1,200+ активни граждани.</span>
+              <span className="font-semibold">Присъединете се към {statsLoading ? '…' : `${(stats?.total_users ?? 0).toLocaleString()}+`} активни граждани.</span>
               {' '}Печелете точки, отключвайте нива и направете София по-чиста.
             </p>
           </div>

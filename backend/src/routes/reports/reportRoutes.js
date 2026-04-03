@@ -2,16 +2,19 @@ import express from 'express';
 import { Prisma } from '@prisma/client';
 import prisma from '../../db.js';
 import authMiddleware from '../../middleware/authMiddleware.js';
+import optionalAuthMiddleware from '../../middleware/optionalAuthMiddleware.js';
 import {
   upload,
   getUploadedFileUrl,
   removeUploadedFile,
 } from '../../middleware/uploadMiddleware.js';
 import asyncHandler from '../../utils/asyncHandler.js';
+import { POINT_AWARDS, addPoints } from '../../utils/gamification.js';
 import {
   CATEGORY_VALUES,
   STATUS_VALUES,
   REPORT_SELECT,
+  UUID_PATTERN,
   parseCoordinate,
   parseOptionalDate,
   formatReportRow,
@@ -59,43 +62,49 @@ router.post(
     const trimmedDescription = description?.trim() || null;
 
     let rows;
+    let updatedUser;
 
     try {
-      rows = await prisma.$queryRaw`
-        INSERT INTO reports (
-          user_id,
-          category,
-          title,
-          description,
-          location,
-          image_url,
-          updated_at
-        )
-        VALUES (
-          ${req.user.id}::uuid,
-          ${category}::"Category",
-          ${title.trim()},
-          ${trimmedDescription},
-          ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography,
-          ${imageUrl},
-          NOW()
-        )
-        RETURNING
-          id,
-          user_id,
-          category::text AS category,
-          title,
-          description,
-          image_url,
-          status::text AS status,
-          heat_score,
-          vote_count,
-          created_at,
-          updated_at,
-          resolved_at,
-          ST_Y(location::geometry) AS latitude,
-          ST_X(location::geometry) AS longitude
-      `;
+      [rows, updatedUser] = await prisma.$transaction(async (tx) => {
+        const inserted = await tx.$queryRaw`
+          INSERT INTO reports (
+            user_id,
+            category,
+            title,
+            description,
+            location,
+            image_url,
+            updated_at
+          )
+          VALUES (
+            ${req.user.id}::uuid,
+            ${category}::"Category",
+            ${title.trim()},
+            ${trimmedDescription},
+            ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography,
+            ${imageUrl},
+            NOW()
+          )
+          RETURNING
+            id,
+            user_id,
+            category::text AS category,
+            title,
+            description,
+            image_url,
+            status::text AS status,
+            heat_score,
+            vote_count,
+            created_at,
+            updated_at,
+            resolved_at,
+            ST_Y(location::geometry) AS latitude,
+            ST_X(location::geometry) AS longitude
+        `;
+
+        const user = await addPoints(tx, req.user.id, POINT_AWARDS.reportSubmitted);
+        return [inserted, user];
+      });
     } catch (error) {
       await removeUploadedFile(req.file);
       throw error;
@@ -109,6 +118,7 @@ router.post(
           display_name: req.user.display_name,
         },
       },
+      user: updatedUser,
     });
   }),
 );
@@ -118,6 +128,7 @@ router.get(
   '/',
   asyncHandler(async (req, res) => {
     const {
+      user_id: userId,
       category,
       status,
       date_from: dateFromRaw,
@@ -131,6 +142,13 @@ router.get(
     } = req.query;
 
     const conditions = [];
+
+    if (userId) {
+      if (!UUID_PATTERN.test(userId)) {
+        return res.status(400).json({ error: 'user_id must be a valid UUID' });
+      }
+      conditions.push(Prisma.sql`r.user_id = ${userId}::uuid`);
+    }
 
     if (category) {
       if (!CATEGORY_VALUES.includes(category)) {
@@ -238,6 +256,7 @@ router.get(
 // GET /:id — get a single report with its status history
 router.get(
   '/:id',
+  optionalAuthMiddleware,
   asyncHandler(async (req, res) => {
     if (!validateReportId(req.params.id)) {
       return res.status(400).json({ error: 'report id must be a valid UUID' });
@@ -255,21 +274,34 @@ router.get(
       return res.status(404).json({ error: 'report not found' });
     }
 
-    const statusHistory = await prisma.statusHistory.findMany({
-      where: { report_id: req.params.id },
-      orderBy: { changed_at: 'desc' },
-      include: {
-        admin: {
-          select: {
-            id: true,
-            display_name: true,
+    const [statusHistory, votedByMe] = await Promise.all([
+      prisma.statusHistory.findMany({
+        where: { report_id: req.params.id },
+        orderBy: { changed_at: 'desc' },
+        include: {
+          admin: {
+            select: {
+              id: true,
+              display_name: true,
+            },
           },
         },
-      },
-    });
+      }),
+      req.user
+        ? prisma.vote.findUnique({
+            where: {
+              user_id_report_id: {
+                user_id: req.user.id,
+                report_id: req.params.id,
+              },
+            },
+            select: { user_id: true },
+          })
+        : Promise.resolve(null),
+    ]);
 
     return res.json({
-      report: formatReportRow(row),
+      report: { ...formatReportRow(row), voted_by_me: !!votedByMe },
       status_history: statusHistory.map((entry) => ({
         id: entry.id,
         report_id: entry.report_id,

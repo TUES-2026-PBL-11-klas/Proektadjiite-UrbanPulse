@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { DM_Sans, JetBrains_Mono, Syne } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { AuthProvider } from '@/context/auth-context'
 import './globals.css'
 
 const dmSans = DM_Sans({ 
@@ -47,7 +48,9 @@ export default function RootLayout({
   return (
     <html lang="bg" className={`${dmSans.variable} ${syne.variable} ${jetbrainsMono.variable}`}>
       <body className="font-sans antialiased">
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
         <Analytics />
       </body>
     </html>

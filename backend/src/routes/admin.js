@@ -120,4 +120,40 @@ router.get('/analytics/reports', async (req, res) => {
   }
 });
 
+// GET /api/admin/users
+// Returns all users with their report count, ordered by points descending.
+router.get('/users', async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        display_name: true,
+        role: true,
+        points: true,
+        level: true,
+        created_at: true,
+        _count: { select: { reports: true } },
+      },
+      orderBy: { points: 'desc' },
+    });
+
+    return res.json({
+      users: users.map((u) => ({
+        id: u.id,
+        email: u.email,
+        display_name: u.display_name,
+        role: u.role,
+        points: u.points,
+        level: u.level,
+        created_at: u.created_at,
+        report_count: u._count.reports,
+      })),
+    });
+  } catch (err) {
+    console.error('[admin users]', err.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;

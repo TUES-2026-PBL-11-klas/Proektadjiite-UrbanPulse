@@ -3,6 +3,7 @@
 import { Navbar } from '@/components/navbar'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { useAuth } from '@/context/auth-context'
 import {
   Activity,
   Users,
@@ -24,13 +25,7 @@ import {
   MessageSquareQuote,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-const stats = [
-  { value: '3,450+', label: 'Подадени сигнали', icon: MapPin },
-  { value: '1,200+', label: 'Активни граждани', icon: Users },
-  { value: '78%', label: 'Решени проблеми', icon: CheckCircle2 },
-  { value: '24', label: 'Района на София', icon: Globe },
-]
+import { usePlatformStats } from '@/lib/hooks/use-platform-stats'
 
 const values = [
   {
@@ -114,6 +109,33 @@ const team = [
 ]
 
 export default function AboutPage() {
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
+  const { stats: liveStats, isLoading: statsLoading } = usePlatformStats()
+
+  const platformStats = [
+    {
+      value: statsLoading ? '…' : `${(liveStats?.total_reports ?? 0).toLocaleString()}+`,
+      label: 'Подадени сигнали',
+      icon: MapPin,
+    },
+    {
+      value: statsLoading ? '…' : `${(liveStats?.total_users ?? 0).toLocaleString()}+`,
+      label: 'Активни граждани',
+      icon: Users,
+    },
+    {
+      value: statsLoading ? '…' : `${liveStats?.resolved_percentage ?? 0}%`,
+      label: 'Решени проблеми',
+      icon: CheckCircle2,
+    },
+    {
+      value: '24',
+      label: 'Района на София',
+      icon: Globe,
+    },
+  ]
+
   return (
     <div className="min-h-screen bg-surface">
       <Navbar />
@@ -154,15 +176,27 @@ export default function AboutPage() {
 
           {/* CTA buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link href="/report">
+            {isAdmin ? (
               <Button
                 size="lg"
-                className="h-12 px-8 bg-forest hover:bg-forest/90 text-white font-semibold rounded-xl text-base shadow-lg shadow-forest/20 transition-all hover:shadow-forest/30 hover:-translate-y-0.5"
+                disabled
+                className="h-12 px-8 bg-forest/40 text-white/60 font-semibold rounded-xl text-base cursor-not-allowed"
+                title="Администраторите не могат да подават сигнали"
               >
                 Докладвай проблем
                 <ArrowRight size={18} className="ml-2" />
               </Button>
-            </Link>
+            ) : (
+              <Link href="/report">
+                <Button
+                  size="lg"
+                  className="h-12 px-8 bg-forest hover:bg-forest/90 text-white font-semibold rounded-xl text-base shadow-lg shadow-forest/20 transition-all hover:shadow-forest/30 hover:-translate-y-0.5"
+                >
+                  Докладвай проблем
+                  <ArrowRight size={18} className="ml-2" />
+                </Button>
+              </Link>
+            )}
             <Link href="/">
               <Button
                 size="lg"
@@ -176,7 +210,7 @@ export default function AboutPage() {
 
           {/* Stats row */}
           <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-4">
-            {stats.map((stat) => (
+            {platformStats.map((stat) => (
               <div
                 key={stat.label}
                 className="group relative bg-card rounded-2xl border border-border hover:border-forest/25 p-6 text-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
@@ -433,7 +467,7 @@ export default function AboutPage() {
             Готови ли сте да направите разлика?
           </h2>
           <p className="text-white/55 text-lg mb-12 max-w-xl mx-auto leading-relaxed">
-            Присъединете се към над 1,200 активни граждани, които вече променят
+            Присъединете се към над {statsLoading ? '…' : (liveStats?.total_users ?? 0).toLocaleString()} активни граждани, които вече променят
             София. Вашият глас може да бъде следващият, който ще бъде чут.
           </p>
 
@@ -498,17 +532,23 @@ export default function AboutPage() {
               <ul className="space-y-3 text-sm">
                 {[
                   { label: 'Карта', href: '/' },
-                  { label: 'Докладвай', href: '/report' },
+                  { label: 'Докладвай', href: isAdmin ? null : '/report' },
                   { label: 'За нас', href: '/about' },
                   { label: 'Администрация', href: '/admin' },
                 ].map((link) => (
                   <li key={link.label}>
-                    <Link
-                      href={link.href}
-                      className="text-white/45 hover:text-lime transition-colors"
-                    >
-                      {link.label}
-                    </Link>
+                    {link.href ? (
+                      <Link
+                        href={link.href}
+                        className="text-white/45 hover:text-lime transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    ) : (
+                      <span className="text-white/20 cursor-not-allowed" title="Администраторите не могат да подават сигнали">
+                        {link.label}
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>
