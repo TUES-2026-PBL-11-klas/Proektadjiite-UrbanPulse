@@ -1,6 +1,7 @@
 export const POINT_AWARDS = {
-  voteCast: 2,
-  reportResolved: 25,
+  reportSubmitted: 50,
+  voteCast: 5,
+  reportResolved: 100,
 };
 
 export const calculateLevel = (points) => Math.max(1, Math.floor(points / 100) + 1);

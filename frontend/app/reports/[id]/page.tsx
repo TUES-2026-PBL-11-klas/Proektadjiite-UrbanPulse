@@ -1,6 +1,6 @@
 'use client'
 
-import { use } from 'react'
+import { use, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Navbar } from '@/components/navbar'
 import { StatusBadge } from '@/components/status-badge'
@@ -8,86 +8,204 @@ import { CategoryIcon } from '@/components/category-icon'
 import { LevelBadge } from '@/components/level-badge'
 import { HeatGauge } from '@/components/heat-score'
 import { MapPlaceholder } from '@/components/map-placeholder'
-import { 
-  mockReports, 
-  mockStatusHistory,
-  mockCurrentUser,
-  statusLabels 
-} from '@/lib/mock-data'
-import { 
-  ArrowLeft, 
-  ThumbsUp, 
-  Calendar, 
-  Clock, 
+import { type Report } from '@/lib/mock-data'
+import {
+  ArrowLeft,
+  ThumbsUp,
+  Calendar,
+  Clock,
   MapPin,
-  User,
   Check,
   Circle,
-  Share2
+  Share2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/context/auth-context'
+import { apiGet, apiPost, apiDelete } from '@/lib/api'
+
+interface BackendReport {
+  id: string
+  user_id: string
+  category: string
+  title: string
+  description: string | null
+  image_url: string
+  status: string
+  vote_count: number
+  heat_score: number
+  created_at: string
+  updated_at: string
+  resolved_at: string | null
+  latitude: number
+  longitude: number
+  voted_by_me: boolean
+  author: { id: string; display_name: string }
+}
+
+interface StatusHistoryEntry {
+  id: string
+  report_id: string
+  old_status: string
+  new_status: string
+  comment: string | null
+  changed_at: string
+  admin: { id: string; display_name: string } | null
+}
+
+interface ReportDetailResponse {
+  report: BackendReport
+  status_history: StatusHistoryEntry[]
+}
+
+function mapReport(r: BackendReport): Report {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    userName: r.author.display_name,
+    userLevel: 1,
+    category: r.category as Report['category'],
+    title: r.title,
+    description: r.description ?? '',
+    imageUrl: r.image_url,
+    status: r.status as Report['status'],
+    district: '',
+    location: { lat: r.latitude, lng: r.longitude },
+    voteCount: r.vote_count,
+    heatScore: r.heat_score,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+    resolvedAt: r.resolved_at ?? undefined,
+  }
+}
 
 export default function ReportDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const report = mockReports.find(r => r.id === id) || mockReports[0]
-  const statusHistory = mockStatusHistory.filter(h => h.reportId === report.id)
-  const hasVoted = false // Mock state
+  const { user, token, refreshPoints } = useAuth()
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('bg-BG', {
+  const [report, setReport] = useState<Report | null>(null)
+  const [statusHistory, setStatusHistory] = useState<StatusHistoryEntry[]>([])
+  const [hasVoted, setHasVoted] = useState(false)
+  const [voteCount, setVoteCount] = useState(0)
+  const [voteLoading, setVoteLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
+
+  useEffect(() => {
+    apiGet<ReportDetailResponse>(`/api/reports/${id}`, token ?? undefined)
+      .then(data => {
+        setReport(mapReport(data.report))
+        setStatusHistory(data.status_history)
+        setHasVoted(data.report.voted_by_me)
+        setVoteCount(data.report.vote_count)
+      })
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false))
+  }, [id, token])
+
+  const handleVote = async () => {
+    if (!user || voteLoading) return
+    setVoteLoading(true)
+    try {
+      if (hasVoted) {
+        const res = await apiDelete<{ user: { points: number; level: number } }>(
+          `/api/reports/${id}/vote`, token ?? undefined
+        )
+        setHasVoted(false)
+        setVoteCount(c => c - 1)
+        if (res.user) refreshPoints(res.user.points, res.user.level)
+      } else {
+        const res = await apiPost<{ user: { points: number; level: number } }>(
+          `/api/reports/${id}/vote`, {}, token ?? undefined
+        )
+        setHasVoted(true)
+        setVoteCount(c => c + 1)
+        if (res.user) refreshPoints(res.user.points, res.user.level)
+      }
+    } catch {
+      // vote failed — revert nothing, silently ignore
+    } finally {
+      setVoteLoading(false)
+    }
+  }
+
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString('bg-BG', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
     })
-  }
 
-  const formatShortDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('bg-BG', {
+  const formatShortDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString('bg-BG', {
       day: 'numeric',
       month: 'short',
     })
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-surface">
+        <Navbar />
+        <div className="h-72 sm:h-96 bg-muted animate-pulse" />
+        <main className="max-w-4xl mx-auto px-4 py-8">
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-4">
+              {[1, 2, 3].map(i => <div key={i} className="h-32 bg-card rounded-2xl border animate-pulse" />)}
+            </div>
+            <div className="space-y-4">
+              {[1, 2].map(i => <div key={i} className="h-40 bg-card rounded-2xl border animate-pulse" />)}
+            </div>
+          </div>
+        </main>
+      </div>
+    )
   }
 
-  // Define status steps
+  if (notFound || !report) {
+    return (
+      <div className="min-h-screen bg-surface flex items-center justify-center">
+        <Navbar />
+        <div className="text-center">
+          <h1 className="font-heading text-2xl font-bold mb-2">Сигналът не е намерен</h1>
+          <Link href="/" className="text-forest hover:underline">Обратно към картата</Link>
+        </div>
+      </div>
+    )
+  }
+
   const statusSteps = [
     { status: 'submitted', label: 'Подаден', date: report.createdAt },
-    { status: 'in_progress', label: 'В процес', date: statusHistory.find(h => h.newStatus === 'in_progress')?.changedAt },
+    {
+      status: 'in_progress',
+      label: 'В процес',
+      date: statusHistory.find(h => h.new_status === 'in_progress')?.changed_at,
+    },
     { status: 'resolved', label: 'Решен', date: report.resolvedAt },
-    { status: 'archived', label: 'Архивиран', date: null },
+    { status: 'archived', label: 'Архивиран', date: null as string | null | undefined },
   ]
 
-  const getCurrentStepIndex = () => {
-    const statusOrder = ['submitted', 'in_progress', 'resolved', 'archived']
-    return statusOrder.indexOf(report.status)
-  }
-
-  const currentStepIndex = getCurrentStepIndex()
+  const statusOrder = ['submitted', 'in_progress', 'resolved', 'archived']
+  const currentStepIndex = statusOrder.indexOf(report.status)
 
   return (
     <div className="min-h-screen bg-surface">
       <Navbar />
-      
+
       {/* Hero Image */}
       <div className="relative h-72 sm:h-96 lg:h-[450px] bg-dark-surface overflow-hidden">
-        {/* Placeholder image background */}
-        <div 
-          className="absolute inset-0 bg-gradient-to-br from-forest/30 to-dark-surface"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.6)),
-              url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%231A4731" width="100" height="100"/><circle cx="30" cy="40" r="20" fill="%237AE653" opacity="0.1"/><circle cx="70" cy="60" r="25" fill="%23111810" opacity="0.3"/></svg>')
-            `,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        />
-        
-        {/* Back button */}
+        {report.imageUrl ? (
+          <img
+            src={report.imageUrl}
+            alt={report.title}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : null}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/20" />
+
         <div className="absolute top-20 left-4 z-10">
-          <Link 
+          <Link
             href="/"
             className="flex items-center gap-2 px-4 py-2 bg-black/30 backdrop-blur-sm text-white rounded-lg hover:bg-black/50 transition-colors"
           >
@@ -96,14 +214,15 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
           </Link>
         </div>
 
-        {/* Share button */}
         <div className="absolute top-20 right-4 z-10">
-          <button className="p-2.5 bg-black/30 backdrop-blur-sm text-white rounded-lg hover:bg-black/50 transition-colors">
+          <button
+            onClick={() => navigator.clipboard?.writeText(window.location.href)}
+            className="p-2.5 bg-black/30 backdrop-blur-sm text-white rounded-lg hover:bg-black/50 transition-colors"
+          >
             <Share2 size={18} />
           </button>
         </div>
-        
-        {/* Title overlay */}
+
         <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 via-black/50 to-transparent">
           <div className="max-w-4xl mx-auto">
             <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -124,12 +243,12 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Description */}
-            <div className="bg-card rounded-2xl border p-6">
-              <h2 className="font-heading font-semibold text-lg mb-4">Описание</h2>
-              <p className="text-muted-foreground leading-relaxed">
-                {report.description}
-              </p>
-            </div>
+            {report.description && (
+              <div className="bg-card rounded-2xl border p-6">
+                <h2 className="font-heading font-semibold text-lg mb-4">Описание</h2>
+                <p className="text-muted-foreground leading-relaxed">{report.description}</p>
+              </div>
+            )}
 
             {/* Submitter Info */}
             <div className="bg-card rounded-2xl border p-6">
@@ -176,7 +295,9 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
                 <h2 className="font-heading font-semibold text-lg mb-2">Локация</h2>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <MapPin size={16} />
-                  <span>{report.district}, София</span>
+                  <span className="font-mono text-sm">
+                    {report.location.lat.toFixed(5)}, {report.location.lng.toFixed(5)}
+                  </span>
                 </div>
               </div>
               <MapPlaceholder
@@ -194,24 +315,31 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
             <div className="bg-card rounded-2xl border p-6">
               <div className="text-center mb-6">
                 <p className="text-sm text-muted-foreground mb-1">Брой гласове</p>
-                <p className="font-heading text-5xl font-bold text-forest">
-                  {report.voteCount}
-                </p>
+                <p className="font-heading text-5xl font-bold text-forest">{voteCount}</p>
               </div>
-              
-              <Button 
+
+              <Button
                 className={cn(
                   'w-full h-12 font-semibold',
-                  hasVoted 
-                    ? 'bg-muted text-muted-foreground cursor-not-allowed' 
-                    : 'bg-forest hover:bg-forest/90 text-white'
+                  hasVoted
+                    ? 'bg-lime/20 text-forest border border-lime/40 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30'
+                    : user
+                      ? 'bg-forest hover:bg-forest/90 text-white'
+                      : 'bg-muted text-muted-foreground cursor-not-allowed'
                 )}
-                disabled={hasVoted}
+                disabled={!user || voteLoading}
+                onClick={handleVote}
               >
                 <ThumbsUp size={20} className="mr-2" />
-                {hasVoted ? 'Вече гласувахте' : 'Гласувай'}
+                {voteLoading
+                  ? 'Зареждане...'
+                  : hasVoted
+                    ? 'Премахни гласа'
+                    : user
+                      ? 'Гласувай'
+                      : 'Влезте за да гласувате'}
               </Button>
-              
+
               <p className="text-xs text-muted-foreground text-center mt-3">
                 Гласувайте, за да покажете подкрепа и да повишите приоритета
               </p>
@@ -233,7 +361,6 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
 
                   return (
                     <div key={step.status} className="flex items-start gap-3">
-                      {/* Step indicator */}
                       <div className="relative flex flex-col items-center">
                         <div className={cn(
                           'w-8 h-8 rounded-full flex items-center justify-center',
@@ -256,13 +383,9 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
                           )} />
                         )}
                       </div>
-                      
-                      {/* Step content */}
+
                       <div className="flex-1 pb-4">
-                        <p className={cn(
-                          'font-medium',
-                          isFuture && 'text-muted-foreground'
-                        )}>
+                        <p className={cn('font-medium', isFuture && 'text-muted-foreground')}>
                           {step.label}
                         </p>
                         {step.date && (
@@ -271,9 +394,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
                           </p>
                         )}
                         {!step.date && isFuture && (
-                          <p className="text-sm text-muted-foreground">
-                            Очаква се
-                          </p>
+                          <p className="text-sm text-muted-foreground">Очаква се</p>
                         )}
                       </div>
                     </div>

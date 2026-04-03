@@ -32,6 +32,7 @@ interface AuthContextValue extends AuthState {
   register: (email: string, password: string, displayName: string) => Promise<void>
   logout: () => void
   updateUser: (user: User, token: string) => void
+  refreshPoints: (points: number, level: number) => void
   isLoading: boolean
 }
 
@@ -113,8 +114,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     persist(token, user)
   }
 
+  function refreshPoints(points: number, level: number) {
+    setState(prev => {
+      if (!prev.user || !prev.token) return prev
+      const updated = { ...prev.user, points, level: level as UserLevel }
+      localStorage.setItem(USER_KEY, JSON.stringify(updated))
+      return { ...prev, user: updated }
+    })
+  }
+
   return (
-    <AuthContext.Provider value={{ ...state, login, register, logout, updateUser, isLoading }}>
+    <AuthContext.Provider value={{ ...state, login, register, logout, updateUser, refreshPoints, isLoading }}>
       {children}
     </AuthContext.Provider>
   )
