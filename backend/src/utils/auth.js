@@ -13,6 +13,7 @@ export const toAuthUser = (user) => ({
   role: user.role,
   points: user.points,
   level: user.level,
+  created_at: user.created_at,
 });
 
 export const signToken = (user) =>

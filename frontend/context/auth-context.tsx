@@ -4,7 +4,8 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { apiPost } from '@/lib/api'
 import { type User, type UserLevel } from '@/lib/mock-data'
 
-const STORAGE_KEY = 'urbanpulse_token'
+const TOKEN_KEY = 'urbanpulse_token'
+const USER_KEY = 'urbanpulse_user'
 
 interface BackendUser {
   id: string
@@ -13,6 +14,7 @@ interface BackendUser {
   role: 'citizen' | 'admin'
   points: number
   level: number
+  created_at?: string
 }
 
 interface AuthResponse {
@@ -29,6 +31,7 @@ interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, displayName: string) => Promise<void>
   logout: () => void
+  updateUser: (user: User, token: string) => void
   isLoading: boolean
 }
 
@@ -40,14 +43,14 @@ function mapUser(b: BackendUser): User {
     role: b.role,
     points: b.points,
     level: b.level as UserLevel,
-    createdAt: new Date().toISOString(),
+    createdAt: b.created_at ?? new Date().toISOString(),
   }
 }
 
-function parseJwt(token: string): (BackendUser & { exp: number }) | null {
+function parseJwtExp(token: string): number | null {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]))
-    return payload
+    return payload.exp ?? null
   } catch {
     return null
   }
@@ -60,22 +63,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem(STORAGE_KEY)
-    if (token) {
-      const payload = parseJwt(token)
-      if (payload && payload.exp * 1000 > Date.now()) {
-        setState({ user: mapUser(payload), token })
+    const token = localStorage.getItem(TOKEN_KEY)
+    const userJson = localStorage.getItem(USER_KEY)
+    if (token && userJson) {
+      const exp = parseJwtExp(token)
+      if (exp && exp * 1000 > Date.now()) {
+        try {
+          const user = JSON.parse(userJson) as User
+          setState({ user, token })
+        } catch {
+          localStorage.removeItem(TOKEN_KEY)
+          localStorage.removeItem(USER_KEY)
+        }
       } else {
-        localStorage.removeItem(STORAGE_KEY)
+        localStorage.removeItem(TOKEN_KEY)
+        localStorage.removeItem(USER_KEY)
       }
     }
     setIsLoading(false)
   }, [])
 
+  function persist(token: string, user: User) {
+    localStorage.setItem(TOKEN_KEY, token)
+    localStorage.setItem(USER_KEY, JSON.stringify(user))
+    setState({ user, token })
+  }
+
   async function login(email: string, password: string) {
     const { token, user } = await apiPost<AuthResponse>('/api/auth/login', { email, password })
-    localStorage.setItem(STORAGE_KEY, token)
-    setState({ user: mapUser(user), token })
+    persist(token, mapUser(user))
   }
 
   async function register(email: string, password: string, displayName: string) {
@@ -84,17 +100,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       display_name: displayName,
     })
-    localStorage.setItem(STORAGE_KEY, token)
-    setState({ user: mapUser(user), token })
+    persist(token, mapUser(user))
   }
 
   function logout() {
-    localStorage.removeItem(STORAGE_KEY)
+    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(USER_KEY)
     setState({ user: null, token: null })
   }
 
+  function updateUser(user: User, token: string) {
+    persist(token, user)
+  }
+
   return (
-    <AuthContext.Provider value={{ ...state, login, register, logout, isLoading }}>
+    <AuthContext.Provider value={{ ...state, login, register, logout, updateUser, isLoading }}>
       {children}
     </AuthContext.Provider>
   )

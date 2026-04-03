@@ -25,3 +25,7 @@ export function apiPost<T>(path: string, data: unknown, token?: string): Promise
 export function apiGet<T>(path: string, token?: string): Promise<T> {
   return apiFetch<T>(path, { method: 'GET', token })
 }
+
+export function apiPatch<T>(path: string, data: unknown, token?: string): Promise<T> {
+  return apiFetch<T>(path, { method: 'PATCH', body: JSON.stringify(data), token })
+}

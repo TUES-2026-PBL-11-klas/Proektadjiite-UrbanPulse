@@ -12,6 +12,7 @@ import {
   CATEGORY_VALUES,
   STATUS_VALUES,
   REPORT_SELECT,
+  UUID_PATTERN,
   parseCoordinate,
   parseOptionalDate,
   formatReportRow,
@@ -118,6 +119,7 @@ router.get(
   '/',
   asyncHandler(async (req, res) => {
     const {
+      user_id: userId,
       category,
       status,
       date_from: dateFromRaw,
@@ -131,6 +133,13 @@ router.get(
     } = req.query;
 
     const conditions = [];
+
+    if (userId) {
+      if (!UUID_PATTERN.test(userId)) {
+        return res.status(400).json({ error: 'user_id must be a valid UUID' });
+      }
+      conditions.push(Prisma.sql`r.user_id = ${userId}::uuid`);
+    }
 
     if (category) {
       if (!CATEGORY_VALUES.includes(category)) {
