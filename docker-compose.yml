@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    platform: linux/amd64
+    container_name: urbanpulse-db
+    environment:
+      POSTGRES_DB: urbanpulse
+      POSTGRES_USER: urbanpulse
+      POSTGRES_PASSWORD: urbanpulse
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U urbanpulse -d urbanpulse"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    build:
+      context: ./backend
+    container_name: urbanpulse-backend
+    environment:
+      PORT: 3000
+      JWT_SECRET: change-me
+      DATABASE_URL: postgresql://urbanpulse:urbanpulse@db:5432/urbanpulse?schema=public
+    ports:
+      - "3000:3000"
+    volumes:
+      - backend_uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "const http=require('http');http.get('http://127.0.0.1:3000/health',res=>process.exit(res.statusCode===200?0:1)).on('error',()=>process.exit(1));",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  postgres_data:
+  backend_uploads:
