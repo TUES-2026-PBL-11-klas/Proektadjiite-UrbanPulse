@@ -1,38 +1,16 @@
 services:
-  db:
-    image: postgis/postgis:16-3.4
-    platform: linux/amd64
-    container_name: urbanpulse-db
-    environment:
-      POSTGRES_DB: urbanpulse
-      POSTGRES_USER: urbanpulse
-      POSTGRES_PASSWORD: urbanpulse
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U urbanpulse -d urbanpulse"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
-
   backend:
     build:
       context: ./backend
     container_name: urbanpulse-backend
     environment:
-      PORT: 3000
-      JWT_SECRET: change-me
-      DATABASE_URL: postgresql://urbanpulse:urbanpulse@db:5432/urbanpulse?schema=public
+      PORT: ${BACKEND_PORT:-3000}
+      JWT_SECRET: ${JWT_SECRET:-change-me}
+      DATABASE_URL: ${DATABASE_URL}
     ports:
-      - "3000:3000"
+      - "${BACKEND_PORT:-3000}:3000"
     volumes:
       - backend_uploads:/app/uploads
-    depends_on:
-      db:
-        condition: service_healthy
     healthcheck:
       test:
         [
@@ -46,6 +24,19 @@ services:
       retries: 5
       start_period: 20s
 
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
+    container_name: urbanpulse-frontend
+    environment:
+      PORT: 3001
+    ports:
+      - "${FRONTEND_PORT:-3001}:3001"
+    depends_on:
+      backend:
+        condition: service_healthy
+
 volumes:
-  postgres_data:
   backend_uploads:
