@@ -100,8 +100,8 @@ export function CategoryCard({
       className={cn(
         'flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all duration-200',
         'hover:scale-[1.02] hover:shadow-md',
-        selected 
-          ? 'border-forest bg-forest/5 shadow-md' 
+        selected
+          ? 'border-forest bg-forest/5 shadow-md'
           : 'border-border bg-card hover:border-forest/30',
         className
       )}

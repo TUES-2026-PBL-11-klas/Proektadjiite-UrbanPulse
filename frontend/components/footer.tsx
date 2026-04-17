@@ -18,7 +18,7 @@ export function Footer() {
               <span className="font-heading font-bold text-xl">UrbanPulse</span>
             </Link>
             <p className="text-white/60 text-sm leading-relaxed max-w-sm mb-6">
-              Гражданска платформа за докладване и проследяване на екологични проблеми в реално време. 
+              Гражданска платформа за докладване и проследяване на екологични проблеми в реално време.
               Заедно правим София по-чиста.
             </p>
             <div className="flex items-center gap-3">

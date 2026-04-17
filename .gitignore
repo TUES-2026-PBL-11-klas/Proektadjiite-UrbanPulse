@@ -13,3 +13,9 @@ frontend/.next/
 frontend/node_modules/
 
 plan.md
+
+# Terraform
+terraform/.terraform/
+*.tfstate
+*.tfstate.backup
+terraform.tfvars

@@ -20,6 +20,7 @@ import {
   formatReportRow,
   validateReportId,
 } from './helpers.js';
+import { reportsCreatedTotal } from '../../metrics.js';
 
 const router = express.Router();
 
@@ -109,6 +110,8 @@ router.post(
       await removeUploadedFile(req.file);
       throw error;
     }
+
+    reportsCreatedTotal.inc({ category });
 
     return res.status(201).json({
       report: {

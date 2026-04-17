@@ -49,7 +49,7 @@ export function PointsToast({
       <div className="p-2 bg-lime/20 rounded-lg">
         <Sparkles size={24} className="text-lime animate-pulse" />
       </div>
-      
+
       <div>
         <p className="text-sm opacity-90">{message}</p>
         <p className="text-2xl font-heading font-bold">
@@ -57,7 +57,7 @@ export function PointsToast({
         </p>
       </div>
 
-      <button 
+      <button
         onClick={() => {
           setIsLeaving(true)
           setTimeout(() => {

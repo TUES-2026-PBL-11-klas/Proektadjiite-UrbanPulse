@@ -1,0 +1,8 @@
+# Gitleaks configuration for UrbanPulse
+# https://github.com/gitleaks/gitleaks#configuration
+
+[allowlist]
+  description = "Files whose content is intentionally hash-like and not real secrets"
+  paths = [
+    '''^\.secrets\.baseline$''',
+  ]

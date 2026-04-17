@@ -1,8 +1,8 @@
-export type ReportCategory = 
-  | 'illegal_dump' 
-  | 'air_pollution' 
-  | 'water_pollution' 
-  | 'broken_container' 
+export type ReportCategory =
+  | 'illegal_dump'
+  | 'air_pollution'
+  | 'water_pollution'
+  | 'broken_container'
   | 'noise_pollution'
   | 'other'
 

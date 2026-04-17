@@ -88,8 +88,8 @@ export default function SignInPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Парола</Label>
-                <Link 
-                  href="/forgot-password" 
+                <Link
+                  href="/forgot-password"
                   className="text-sm text-forest hover:text-forest/80 hover:underline"
                 >
                   Забравена парола?
@@ -158,7 +158,7 @@ export default function SignInPage() {
       {/* Right side - Hero */}
       <div className="hidden lg:flex flex-1 bg-dark-surface relative overflow-hidden">
         {/* Background pattern */}
-        <div 
+        <div
           className="absolute inset-0 opacity-10"
           style={{
             backgroundImage: `
@@ -167,9 +167,9 @@ export default function SignInPage() {
             `,
           }}
         />
-        
+
         {/* Grid pattern */}
-        <div 
+        <div
           className="absolute inset-0 opacity-5"
           style={{
             backgroundImage: `

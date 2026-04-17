@@ -28,7 +28,7 @@ export function Navbar({ user, transparent = false, className }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
-    <nav 
+    <nav
       className={cn(
         'fixed top-0 left-0 right-0 z-50 transition-colors duration-300',
         transparent ? 'bg-dark-surface/80 backdrop-blur-md' : 'bg-dark-surface',
@@ -51,14 +51,14 @@ export function Navbar({ user, transparent = false, className }: NavbarProps) {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center justify-self-center gap-8">
-            <Link 
-              href="/" 
+            <Link
+              href="/"
               className="text-white/80 hover:text-lime transition-colors font-medium"
             >
               Карта
             </Link>
-            <Link 
-              href="/about" 
+            <Link
+              href="/about"
               className="text-white/80 hover:text-lime transition-colors font-medium"
             >
               За нас
@@ -172,21 +172,21 @@ export function Navbar({ user, transparent = false, className }: NavbarProps) {
       {mobileMenuOpen && (
         <div className="md:hidden bg-dark-surface border-t border-white/10">
           <div className="px-4 py-4 space-y-3">
-            <Link 
-              href="/" 
+            <Link
+              href="/"
               className="block py-2 text-white/80 hover:text-lime transition-colors font-medium"
               onClick={() => setMobileMenuOpen(false)}
             >
               Карта
             </Link>
-            <Link 
-              href="/about" 
+            <Link
+              href="/about"
               className="block py-2 text-white/80 hover:text-lime transition-colors font-medium"
               onClick={() => setMobileMenuOpen(false)}
             >
               За нас
             </Link>
-            
+
             <div className="pt-3 border-t border-white/10 space-y-3">
               {effectiveUser ? (
                 <>

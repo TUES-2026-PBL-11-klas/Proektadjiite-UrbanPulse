@@ -2,21 +2,21 @@
 
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
-import { 
-  type ReportCategory, 
-  type ReportStatus, 
-  categoryLabels, 
-  statusLabels 
+import {
+  type ReportCategory,
+  type ReportStatus,
+  categoryLabels,
+  statusLabels
 } from '@/lib/mock-data'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { 
-  Trash2, 
-  Wind, 
-  Droplets, 
-  Package, 
-  Volume2, 
+import {
+  Trash2,
+  Wind,
+  Droplets,
+  Package,
+  Volume2,
   AlertTriangle,
   Filter,
   X,
@@ -97,7 +97,7 @@ export function FilterSidebar({
   }
 
   return (
-    <aside 
+    <aside
       className={cn(
         'bg-card border-r h-full transition-all duration-300 overflow-hidden',
         isOpen ? 'w-72' : 'w-0',
@@ -113,9 +113,9 @@ export function FilterSidebar({
           </div>
           <div className="flex items-center gap-1">
             {hasActiveFilters && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={resetFilters}
                 className="text-muted-foreground hover:text-foreground"
               >
@@ -161,8 +161,8 @@ export function FilterSidebar({
                       key={category}
                       className={cn(
                         'flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors',
-                        isChecked 
-                          ? 'bg-forest/10 border border-forest/30' 
+                        isChecked
+                          ? 'bg-forest/10 border border-forest/30'
                           : 'hover:bg-muted border border-transparent'
                       )}
                     >
@@ -210,14 +210,14 @@ export function FilterSidebar({
                     resolved: 'bg-green-500',
                     archived: 'bg-gray-400',
                   }[status]
-                  
+
                   return (
                     <label
                       key={status}
                       className={cn(
                         'flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors',
-                        isChecked 
-                          ? 'bg-forest/10 border border-forest/30' 
+                        isChecked
+                          ? 'bg-forest/10 border border-forest/30'
                           : 'hover:bg-muted border border-transparent'
                       )}
                     >
@@ -258,7 +258,7 @@ export function FilterSidebar({
             {expandedSections.time && (
               <RadioGroup
                 value={filters.timePeriod}
-                onValueChange={(value: string) => 
+                onValueChange={(value: string) =>
                   onFiltersChange({ ...filters, timePeriod: value as FilterState['timePeriod'] })
                 }
                 className="space-y-2"
@@ -268,13 +268,13 @@ export function FilterSidebar({
                     key={period}
                     className={cn(
                       'flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors',
-                      filters.timePeriod === period 
-                        ? 'bg-forest/10 border border-forest/30' 
+                      filters.timePeriod === period
+                        ? 'bg-forest/10 border border-forest/30'
                         : 'hover:bg-muted border border-transparent'
                     )}
                   >
-                    <RadioGroupItem 
-                      value={period} 
+                    <RadioGroupItem
+                      value={period}
                       id={period}
                       className="data-[state=checked]:border-forest data-[state=checked]:text-forest"
                     />
@@ -318,11 +318,11 @@ export function MobileFilterSheet({
   return (
     <div className="fixed inset-0 z-50 md:hidden">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
-      
+
       {/* Sheet */}
       <div className="absolute bottom-0 left-0 right-0 bg-card rounded-t-2xl max-h-[80vh] overflow-hidden animate-in slide-in-from-bottom">
         <div className="p-4 border-b flex items-center justify-between">
@@ -335,14 +335,14 @@ export function MobileFilterSheet({
           </button>
         </div>
         <div className="overflow-y-auto max-h-[calc(80vh-120px)]">
-          <FilterSidebar 
-            filters={filters} 
+          <FilterSidebar
+            filters={filters}
             onFiltersChange={onFiltersChange}
             className="border-none w-full"
           />
         </div>
         <div className="p-4 border-t">
-          <Button 
+          <Button
             onClick={onClose}
             className="w-full bg-forest hover:bg-forest/90"
           >

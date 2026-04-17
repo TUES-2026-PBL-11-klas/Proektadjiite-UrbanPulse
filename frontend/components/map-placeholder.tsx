@@ -9,7 +9,7 @@ import { ReportCard } from './report-card'
 
 const LeafletMap = dynamic(
   () => import('./leaflet-map'),
-  { 
+  {
     ssr: false,
     loading: () => (
       <div className="w-full h-full bg-surface/50 flex flex-col items-center justify-center tracking-wide text-muted-foreground animate-pulse p-4">
@@ -52,7 +52,7 @@ export function MapPlaceholder({
 
   return (
     <div className={cn('relative bg-surface overflow-hidden shadow-inner w-full h-full min-h-100', className)}>
-      <LeafletMap 
+      <LeafletMap
         reports={reports}
         center={center}
         zoom={zoom}
@@ -61,7 +61,7 @@ export function MapPlaceholder({
         onLocationSelect={onLocationSelect}
         selectedLocation={selectedLocation}
       />
-      
+
       {/* Interactive hint */}
       {interactive && onLocationSelect && !selectedLocation && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-1000 px-4 py-2.5 bg-forest text-white text-sm font-medium rounded-xl shadow-lg flex items-center gap-2 pointer-events-none">

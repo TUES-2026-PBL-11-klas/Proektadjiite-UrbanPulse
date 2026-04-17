@@ -11,29 +11,29 @@ interface LevelBadgeProps {
   className?: string
 }
 
-const levelConfig: Record<UserLevel, { 
+const levelConfig: Record<UserLevel, {
   icon: React.ElementType
   bg: string
   text: string
   border: string
   glow?: string
 }> = {
-  1: { 
-    icon: Eye, 
-    bg: 'bg-gray-100', 
-    text: 'text-gray-700', 
-    border: 'border-gray-200' 
+  1: {
+    icon: Eye,
+    bg: 'bg-gray-100',
+    text: 'text-gray-700',
+    border: 'border-gray-200'
   },
-  2: { 
-    icon: Zap, 
-    bg: 'bg-blue-100', 
-    text: 'text-blue-700', 
-    border: 'border-blue-200' 
+  2: {
+    icon: Zap,
+    bg: 'bg-blue-100',
+    text: 'text-blue-700',
+    border: 'border-blue-200'
   },
-  3: { 
-    icon: Crown, 
-    bg: 'bg-gradient-to-r from-lime/20 to-yellow-100', 
-    text: 'text-forest', 
+  3: {
+    icon: Crown,
+    bg: 'bg-gradient-to-r from-lime/20 to-yellow-100',
+    text: 'text-forest',
     border: 'border-lime/50',
     glow: 'shadow-[0_0_12px_rgba(122,230,83,0.3)]'
   },
@@ -84,14 +84,14 @@ interface LevelCardProps {
 export function LevelCard({ level, points, className }: LevelCardProps) {
   const config = levelConfig[level]
   const Icon = config.icon
-  
+
   // Calculate progress to next level
   const levelThresholds = { 1: 0, 2: 200, 3: 500 }
   const nextLevel = level < 3 ? (level + 1) as UserLevel : 3
   const currentThreshold = levelThresholds[level]
   const nextThreshold = levelThresholds[nextLevel]
-  const progress = level === 3 
-    ? 100 
+  const progress = level === 3
+    ? 100
     : Math.min(((points - currentThreshold) / (nextThreshold - currentThreshold)) * 100, 100)
   const pointsToNext = level === 3 ? 0 : nextThreshold - points
 
@@ -117,7 +117,7 @@ export function LevelCard({ level, points, className }: LevelCardProps) {
           </h3>
         </div>
       </div>
-      
+
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
           <span className="font-medium">{points} точки</span>
@@ -128,7 +128,7 @@ export function LevelCard({ level, points, className }: LevelCardProps) {
           )}
         </div>
         <div className="h-2 bg-white/50 rounded-full overflow-hidden">
-          <div 
+          <div
             className="h-full bg-forest rounded-full transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
