@@ -19,3 +19,7 @@ terraform/.terraform/
 *.tfstate
 *.tfstate.backup
 terraform.tfvars
+
+# Kubernetes — never commit a secret.yaml with real values
+# The committed template is k8s/secret.yaml.example
+k8s/secret.yaml

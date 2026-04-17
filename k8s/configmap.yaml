@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: urbanpulse-config
+  namespace: urbanpulse
+  labels:
+    app.kubernetes.io/part-of: urbanpulse
+data:
+  PORT: "3000"
+  FRONTEND_PORT: "3001"
+  DB_HOST: "postgres-service"
+  DB_NAME: "urbanpulse"
+  DB_USER: "urbanpulse"
+  AUTO_ARCHIVE_DAYS: "30"
