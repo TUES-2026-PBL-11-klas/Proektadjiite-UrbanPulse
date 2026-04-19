@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: Run tests
+        run: npm test
+        working-directory: backend
+
+  lint-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Enable pnpm
+        run: corepack enable pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: frontend
+
+      - name: Build (typecheck)
+        run: pnpm build
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3000
+
+  notify:
+    needs: [test-backend, lint-frontend]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Discord notification
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          BACKEND="${{ needs.test-backend.result }}"
+          FRONTEND="${{ needs.lint-frontend.result }}"
+          if [ "$BACKEND" = "success" ] && [ "$FRONTEND" = "success" ]; then
+            STATUS="passed"
+            COLOR=3066993
+          else
+            STATUS="failed"
+            COLOR=15158332
+          fi
+          curl -fsSL -X POST "$DISCORD_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d "{\"embeds\":[{\"title\":\"CI $STATUS\",\"color\":$COLOR,\"fields\":[{\"name\":\"Branch\",\"value\":\"${{ github.ref_name }}\",\"inline\":true},{\"name\":\"Commit\",\"value\":\"$(echo '${{ github.sha }}' | cut -c1-7)\",\"inline\":true},{\"name\":\"Backend\",\"value\":\"$BACKEND\",\"inline\":true},{\"name\":\"Frontend\",\"value\":\"$FRONTEND\",\"inline\":true}]}]}"
