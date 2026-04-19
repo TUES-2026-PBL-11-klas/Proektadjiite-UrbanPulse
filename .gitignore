@@ -18,6 +18,7 @@ plan.md
 terraform/.terraform/
 *.tfstate
 *.tfstate.backup
+*.tfstate.*.backup
 terraform.tfvars
 
 # Kubernetes — never commit a secret.yaml with real values
