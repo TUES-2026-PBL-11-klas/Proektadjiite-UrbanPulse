@@ -11,6 +11,9 @@
 #   make build — rebuild Docker images only
 # ──────────────────────────────────────────────────────────────
 
+-include .env
+export
+
 KIND    := $(shell command -v kind    2>/dev/null || echo /opt/homebrew/bin/kind)
 KUBECTL := $(shell command -v kubectl 2>/dev/null || echo /usr/local/bin/kubectl)
 
@@ -34,7 +37,8 @@ up:
 	@$(MAKE) --no-print-directory _load
 	@$(MAKE) --no-print-directory _apply
 	@echo "Waiting for pods to be ready..."
-	@$(KUBECTL) wait pod --all -n $(CLUSTER) --for=condition=Ready --timeout=180s --context kind-$(CLUSTER)
+	@$(KUBECTL) wait pod -l 'app.kubernetes.io/name in (backend,frontend)' \
+		-n $(CLUSTER) --for=condition=Ready --timeout=180s --context kind-$(CLUSTER)
 	@echo ""
 	@echo "  App      →  http://localhost:8080"
 	@echo "  API      →  http://localhost:8080/api/stats"
@@ -73,10 +77,8 @@ _ingress:
 	else \
 		echo "Installing NGINX ingress controller..."; \
 		$(KUBECTL) apply -f $(INGRESS_URL) --context kind-$(CLUSTER); \
-		$(KUBECTL) wait --namespace ingress-nginx \
-			--for=condition=ready pod \
-			--selector=app.kubernetes.io/component=controller \
-			--timeout=90s --context kind-$(CLUSTER); \
+		$(KUBECTL) rollout status deployment/ingress-nginx-controller \
+			-n ingress-nginx --context kind-$(CLUSTER) --timeout=90s; \
 	fi
 
 _load:
@@ -93,11 +95,11 @@ _apply:
 	else \
 		$(KUBECTL) create secret generic urbanpulse-secrets \
 			--namespace=$(CLUSTER) --context kind-$(CLUSTER) \
-			--from-literal=DB_PASSWORD=localdev \
-			--from-literal=DATABASE_URL="postgresql://urbanpulse:localdev@postgres-service:5432/urbanpulse" \
-			--from-literal=JWT_SECRET=local-dev-jwt-secret \
-			--from-literal=SMTP_USER="" \
-			--from-literal=SMTP_PASS=""; \
+			--from-literal=DB_PASSWORD="" \
+			--from-literal=DATABASE_URL="$(DATABASE_URL)" \
+			--from-literal=JWT_SECRET="$(JWT_SECRET)" \
+			--from-literal=SMTP_USER="$(SMTP_USER)" \
+			--from-literal=SMTP_PASS="$(SMTP_PASS)"; \
 	fi
 	@for f in k8s/database.yaml k8s/backend.yaml k8s/frontend.yaml k8s/ingress.yaml; do \
 		sed 's/IMAGE_TAG/$(TAG)/g' "$$f" | $(KUBECTL) apply -f - --context kind-$(CLUSTER); \
