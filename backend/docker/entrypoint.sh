@@ -1,9 +1,9 @@
 #!/bin/sh
 set -eu
 
-echo "Waiting for database and applying Prisma schema..."
+echo "Waiting for database and running migrations..."
 
-until npx prisma db push --skip-generate; do
+until npx prisma migrate deploy; do
   echo "Database not ready yet. Retrying in 2 seconds..."
   sleep 2
 done

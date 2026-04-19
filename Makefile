@@ -95,7 +95,7 @@ _apply:
 	else \
 		$(KUBECTL) create secret generic urbanpulse-secrets \
 			--namespace=$(CLUSTER) --context kind-$(CLUSTER) \
-			--from-literal=DB_PASSWORD="" \
+			--from-literal=DB_PASSWORD="$(DB_PASSWORD)" \
 			--from-literal=DATABASE_URL="$(DATABASE_URL)" \
 			--from-literal=JWT_SECRET="$(JWT_SECRET)" \
 			--from-literal=SMTP_USER="$(SMTP_USER)" \

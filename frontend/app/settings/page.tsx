@@ -54,6 +54,7 @@ export default function SettingsPage() {
 
   async function handleProfileSave(e: React.FormEvent) {
     e.preventDefault()
+    if (!user) return
     setProfileError(null)
     setProfileSuccess(false)
     setProfileSaving(true)
@@ -85,6 +86,7 @@ export default function SettingsPage() {
 
   async function handlePasswordSave(e: React.FormEvent) {
     e.preventDefault()
+    if (!user) return
     setPasswordError(null)
     setPasswordSuccess(false)
     setPasswordSaving(true)

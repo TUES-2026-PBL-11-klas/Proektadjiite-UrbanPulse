@@ -9,6 +9,7 @@ import { useAuth } from '@/context/auth-context';
 import { Navbar } from '@/components/navbar';
 import { StatusBadge } from '@/components/status-badge';
 import { CategoryIcon } from '@/components/category-icon';
+import { type ReportCategory } from '@/lib/mock-data';
 
 interface BackendReport {
   id: string;
@@ -148,7 +149,7 @@ export default function AdminEditReportPage({ params }: AdminEditReportPageProps
               <div>
                 <label className="block text-sm font-medium text-neutral-400 mb-2">Category</label>
                 <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-neutral-700/50 border border-neutral-600">
-                  <CategoryIcon category={report.category} size="sm" />
+                  <CategoryIcon category={report.category as ReportCategory} size="sm" />
                   <span className="text-neutral-300 capitalize">{report.category}</span>
                 </div>
               </div>

@@ -1,4 +1,5 @@
 import express from 'express';
+import { AppError } from './errors/AppError.js';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -50,7 +51,9 @@ app.use((err, req, res, next) => {
   if (err?.name === 'MulterError' || err?.message === 'only image uploads are allowed') {
     return res.status(400).json({ error: err.message });
   }
-
+  if (err instanceof AppError) {
+    return res.status(err.statusCode).json({ error: err.message });
+  }
   console.error(err.stack);
   return res.status(500).json({ error: 'Internal server error' });
 });
