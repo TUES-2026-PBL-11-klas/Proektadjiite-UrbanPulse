@@ -64,7 +64,7 @@ export default function RegisterPage() {
       {/* Left side - Hero (reversed from sign in) */}
       <div className="hidden lg:flex flex-1 bg-dark-surface relative overflow-hidden">
         {/* Background pattern */}
-        <div 
+        <div
           className="absolute inset-0 opacity-10"
           style={{
             backgroundImage: `
@@ -73,8 +73,8 @@ export default function RegisterPage() {
             `,
           }}
         />
-        
-        <div 
+
+        <div
           className="absolute inset-0 opacity-5"
           style={{
             backgroundImage: `
@@ -108,7 +108,7 @@ export default function RegisterPage() {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-xl bg-lime/20 flex items-center justify-center shrink-0">
                 <TrendingUp size={24} className="text-lime" />
@@ -120,7 +120,7 @@ export default function RegisterPage() {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-xl bg-lime/20 flex items-center justify-center shrink-0">
                 <Users size={24} className="text-lime" />
@@ -312,8 +312,8 @@ export default function RegisterPage() {
               </label>
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full h-12 bg-forest hover:bg-forest/90 text-white font-semibold"
               disabled={isLoading || !agreedToTerms || formData.password !== formData.confirmPassword}
             >

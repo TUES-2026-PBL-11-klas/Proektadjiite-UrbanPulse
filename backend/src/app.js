@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import routes from './routes/index.js';
 import { fileURLToPath } from 'url';
+import { register, httpRequestDurationSeconds, httpRequestsTotal } from './metrics.js';
 
 dotenv.config();
 
@@ -17,8 +18,26 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(uploadsDir));
 
+// Prometheus timing middleware — excludes /metrics itself to avoid self-referential data
+app.use((req, res, next) => {
+  if (req.path === '/metrics') return next();
+  const end = httpRequestDurationSeconds.startTimer();
+  res.on('finish', () => {
+    const route = req.route ? `${req.baseUrl}${req.route.path}` : 'unmatched';
+    const labels = { method: req.method, route, status_code: res.statusCode };
+    end(labels);
+    httpRequestsTotal.inc(labels);
+  });
+  next();
+});
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
+});
+
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
 });
 
 app.use('/api', routes);

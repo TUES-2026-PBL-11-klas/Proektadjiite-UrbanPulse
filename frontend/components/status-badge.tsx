@@ -30,14 +30,14 @@ const sizeStyles = {
   lg: 'px-3 py-1.5 text-base',
 }
 
-export function StatusBadge({ 
-  status, 
-  size = 'md', 
+export function StatusBadge({
+  status,
+  size = 'md',
   showDot = true,
-  className 
+  className
 }: StatusBadgeProps) {
   return (
-    <span 
+    <span
       className={cn(
         'inline-flex items-center gap-1.5 font-medium rounded-full border',
         statusStyles[status],

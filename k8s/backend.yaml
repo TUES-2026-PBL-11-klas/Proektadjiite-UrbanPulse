@@ -1,0 +1,109 @@
+# ──────────────────────────────────────────────
+# PVC for uploaded images
+# ──────────────────────────────────────────────
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backend-uploads-pvc
+  namespace: urbanpulse
+  labels:
+    app.kubernetes.io/part-of: urbanpulse
+    app.kubernetes.io/component: backend
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+# ──────────────────────────────────────────────
+# Backend Deployment
+# ──────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: urbanpulse
+  labels:
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/part-of: urbanpulse
+    app.kubernetes.io/component: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: backend
+        app.kubernetes.io/part-of: urbanpulse
+        app.kubernetes.io/component: backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: backend
+          image: ghcr.io/tues-2026-pbl-11-klas/proektadjiite-urbanpulse/backend:IMAGE_TAG
+          ports:
+            - containerPort: 3000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: urbanpulse-config
+            - secretRef:
+                name: urbanpulse-secrets
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: backend-uploads-pvc
+---
+# ──────────────────────────────────────────────
+# Backend ClusterIP Service
+# ──────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: urbanpulse
+  labels:
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/part-of: urbanpulse
+    app.kubernetes.io/component: backend
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: backend
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP

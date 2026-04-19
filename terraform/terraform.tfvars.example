@@ -1,0 +1,11 @@
+# Copy this file to terraform.tfvars and fill in real values.
+# terraform.tfvars is gitignored — never commit real secrets.
+
+jwt_secret          = "change-me-to-a-random-secret"  # pragma: allowlist secret
+database_url        = "postgresql://..."   # your Supabase connection string
+db_password         = ""                  # only needed if not using database_url
+discord_webhook_url = ""   # optional: https://discord.com/api/webhooks/...
+smtp_user           = ""   # optional: your-smtp-user@example.com
+smtp_pass           = ""   # optional
+
+# image_tag = "local"   # override for CI/CD: set to github.sha

@@ -47,7 +47,7 @@ export function HeatScore({
   const normalizedScore = Math.min(Math.max(score, 0), 10)
 
   return (
-    <span 
+    <span
       className={cn(
         'inline-flex items-center gap-1.5 rounded-full font-medium',
         getHeatBg(normalizedScore),

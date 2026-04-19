@@ -1,0 +1,83 @@
+# ──────────────────────────────────────────────
+# Frontend Deployment
+# Note: NEXT_PUBLIC_API_URL is baked into the image at build time (build arg in CD workflow).
+# It cannot be overridden at runtime for Next.js standalone builds.
+# ──────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: urbanpulse
+  labels:
+    app.kubernetes.io/name: frontend
+    app.kubernetes.io/part-of: urbanpulse
+    app.kubernetes.io/component: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: frontend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: frontend
+        app.kubernetes.io/part-of: urbanpulse
+        app.kubernetes.io/component: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: ghcr.io/tues-2026-pbl-11-klas/proektadjiite-urbanpulse/frontend:IMAGE_TAG
+          ports:
+            - containerPort: 3001
+              name: http
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: urbanpulse-config
+                  key: FRONTEND_PORT
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3001
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            failureThreshold: 3
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+# ──────────────────────────────────────────────
+# Frontend ClusterIP Service
+# ──────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: urbanpulse
+  labels:
+    app.kubernetes.io/name: frontend
+    app.kubernetes.io/part-of: urbanpulse
+    app.kubernetes.io/component: frontend
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: frontend
+  ports:
+    - name: http
+      port: 3001
+      targetPort: 3001
+      protocol: TCP
